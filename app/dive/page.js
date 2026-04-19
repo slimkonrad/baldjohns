@@ -13,9 +13,14 @@ export default function DivePage() {
   const [currentDepth, setCurrentDepth] = useState(0);
 
   useEffect(() => {
-    setIsMobile(window.innerWidth < 600);
+    const handleResize = () => setIsMobile(window.innerWidth < 600);
+    handleResize();
+    window.addEventListener('resize', handleResize);
     document.body.style.backgroundColor = '#000814';
-    return () => { document.body.style.backgroundColor = ''; };
+    return () => { 
+      document.body.style.backgroundColor = ''; 
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const bgColor = useTransform(
@@ -48,17 +53,15 @@ export default function DivePage() {
   const lockedIndex = trashItems.findIndex(item => !verifiedIds.includes(item.id));
   const dynamicHeight = nextLockedItem ? (lockedIndex + 1) * 1200 + 1000 : 15000; 
 
-  // --- MEMOIZED BUBBLES ---
-  // Using absolute positioning so they move WITH the scroll, not against it.
+  // --- ENHANCED VISIBILITY BUBBLES ---
   const bubbles = useMemo(() => {
-    return Array.from({ length: 40 }).map((_, i) => ({
+    return Array.from({ length: 30 }).map((_, i) => ({
       id: i,
-      size: Math.random() * 15 + 5,
+      size: Math.random() * 12 + 4,
       left: Math.random() * 100,
-      top: Math.random() * 100, // Percentage of the total height
-      duration: Math.random() * 20 + 10,
-      delay: Math.random() * -20, // Start mid-animation
-      depth: Math.random() * 4, // For blur depth
+      duration: Math.random() * 15 + 15,
+      delay: Math.random() * -30,
+      maxOpacity: Math.random() * 0.4 + 0.3, // Increased opacity for visibility
     }));
   }, []);
 
@@ -75,36 +78,35 @@ export default function DivePage() {
       {/* SCENIC RAYS */}
       <motion.div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '600px', background: 'linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.1) 40%, transparent 60%)', filter: 'blur(50px)', opacity: rayOpacity, zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* --- REFINED BUBBLES --- */}
-      {bubbles.map((b) => (
-        <motion.div
-          key={b.id}
-          initial={{ y: `${b.top + 20}%`, opacity: 0 }}
-          animate={{ 
-            y: [`${b.top + 20}%`, `${b.top - 20}%`], 
-            x: [0, 15, -15, 0], // Subtle side-to-side "wobble"
-            opacity: [0, 0.4, 0.4, 0] 
-          }}
-          transition={{ 
-            y: { duration: b.duration, repeat: Infinity, ease: "linear", delay: b.delay },
-            x: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-            opacity: { duration: b.duration, repeat: Infinity, ease: "linear", delay: b.delay }
-          }}
-          style={{ 
-            position: 'absolute', // Absolute makes them move with the water
-            left: `${b.left}%`,
-            width: `${b.size}px`, 
-            height: `${b.size}px`, 
-            borderRadius: '50%', 
-            background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.05) 70%)',
-            border: '0.5px solid rgba(255,255,255,0.2)',
-            boxShadow: '0 0 5px rgba(255,255,255,0.1)',
-            filter: `blur(${b.depth}px)`,
-            zIndex: 2, 
-            pointerEvents: 'none' 
-          }}
-        />
-      ))}
+      {/* FIXED BUBBLE LAYER - Darker/More Visible */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 2 }}>
+        {bubbles.map((b) => (
+          <motion.div
+            key={b.id}
+            initial={{ y: '110vh', x: `${b.left}vw`, opacity: 0 }}
+            animate={{ 
+                y: '-15vh', 
+                opacity: [0, b.maxOpacity, b.maxOpacity, 0],
+            }}
+            transition={{ 
+                duration: b.duration, 
+                repeat: Infinity, 
+                ease: "linear", 
+                delay: b.delay 
+            }}
+            style={{ 
+              position: 'absolute',
+              width: `${b.size}px`, 
+              height: `${b.size}px`, 
+              borderRadius: '50%', 
+              // Using a slightly more solid white with a stronger border
+              background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.1) 70%)',
+              border: '1px solid rgba(255,255,255,0.4)',
+              boxShadow: '0 0 8px rgba(255,255,255,0.2)', // Adds a visible "sheen"
+            }}
+          />
+        ))}
+      </div>
       
       {/* HUD */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', justifyContent: 'space-between', padding: isMobile ? '10px' : '20px', backgroundColor: 'rgba(0, 8, 20, 0.95)', borderBottom: '1px solid rgba(0, 212, 255, 0.2)' }}>
@@ -117,8 +119,8 @@ export default function DivePage() {
       
       {/* INTRO */}
       <motion.div style={{ position: 'absolute', top: '400px', width: '100%', textAlign: 'center', opacity: introOpacity }}>
-        <h1 style={{ fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff', textShadow: '0 0 20px #00d4ff', margin: 0 }}>BEGIN DESCENT</h1>
-        <p style={{ color: '#bde0fe', fontSize: '1.1rem', marginTop: '10px' }}>Verify pollutants to dive deeper.</p>
+        <h1 style={{ fontSize: isMobile ? '2rem' : '4rem', color: '#fff', textShadow: '0 0 20px #00d4ff', margin: 0 }}>BEGIN DESCENT</h1>
+        <p style={{ color: '#bde0fe', fontSize: '1rem', marginTop: '10px' }}>Verify pollutants to dive deeper.</p>
         <motion.div animate={{ y: [0, 15, 0] }} transition={{ duration: 2, repeat: Infinity }} style={{ marginTop: '40px', fontSize: '2.5rem', color: '#00d4ff' }}>↓</motion.div>
       </motion.div>
         
@@ -128,8 +130,8 @@ export default function DivePage() {
         if (!isVerified && !isCurrentTarget && index > lockedIndex) return null;
 
         const moveRightToLeft = index % 2 === 0; 
-        const leftPoint = '-25vw';
-        const rightPoint = '125vw';
+        const leftPoint = '-30vw';
+        const rightPoint = '130vw';
         const xMovement = moveRightToLeft ? [rightPoint, leftPoint] : [leftPoint, rightPoint];
         const isTurtle = item.animal_name.toLowerCase().includes('turtle'); 
 
@@ -147,14 +149,15 @@ export default function DivePage() {
             <motion.div style={{ 
               position: 'absolute', top: `${(index + 1) * 1200}px`, left: '50%', transform: 'translateX(-50%)', 
               border: `1px solid ${isVerified ? '#00ffaa' : '#00d4ff'}`, padding: isMobile ? '12px' : '25px', 
-              width: isMobile ? '90%' : '450px', backgroundColor: 'rgba(0, 10, 20, 0.95)', zIndex: 20, 
+              width: isMobile ? '80%' : '450px', 
+              backgroundColor: 'rgba(0, 10, 20, 0.95)', zIndex: 20, 
               opacity: currentDepth > (index * 1200) - 400 ? 1 : 0 
             }}>
-              <h3 style={{ color: isVerified ? '#00ffaa' : '#fff', textAlign: 'center', margin: '0 0 10px 0' }}>
+              <h3 style={{ color: isVerified ? '#00ffaa' : '#fff', textAlign: 'center', margin: '0 0 10px 0', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>
                 {isVerified ? `[CLEARED]` : ''} {item.item_name}
               </h3>
-              <img src={item.image_url} alt={item.item_name} style={{ width: '100%', height: isMobile ? '120px' : '200px', objectFit: 'contain' }} />
-              <p style={{ color: '#bde0fe', fontSize: '0.85rem', borderTop: '1px solid rgba(0,212,255,0.1)', paddingTop: '10px' }}>{item.impact_fact}</p>
+              <img src={item.image_url} alt={item.item_name} style={{ width: '100%', height: isMobile ? '100px' : '200px', objectFit: 'contain' }} />
+              <p style={{ color: '#bde0fe', fontSize: isMobile ? '0.75rem' : '0.85rem', borderTop: '1px solid rgba(0,212,255,0.1)', paddingTop: '10px' }}>{item.impact_fact}</p>
               {isCurrentTarget && <VerifyButton itemId={item.id} onVerifySuccess={handleVerify} />}
             </motion.div>
 
@@ -165,22 +168,22 @@ export default function DivePage() {
                   animate={{ 
                     opacity: 1, 
                     x: isSwimmer(item.animal_name) ? xMovement : 0, 
-                    y: [0, -12, 12, -6, 0] 
+                    y: [0, -10, 10, -5, 0] 
                   }}
                   transition={{
-                    x: { duration: 18, repeat: Infinity, ease: "linear", delay: Math.random() * 2 },
-                    y: { duration: 5, repeat: Infinity }
+                    x: { duration: 20, repeat: Infinity, ease: "linear", delay: Math.random() * 2 },
+                    y: { duration: 6, repeat: Infinity }
                   }}
                   style={{ 
                     position: 'absolute', 
-                    top: `${(index + 1) * 1200 + 200}px`, 
-                    width: isMobile ? '200px' : '260px', 
+                    top: `${(index + 1) * 1200 + 250}px`, 
+                    width: isMobile ? '160px' : '260px', 
                     zIndex: 5,
                     transform: finalTransform 
                   }}
                 >
                   <img src={item.animal_image_url} alt={item.animal_name} style={{ width: '100%', filter: 'none' }} />
-                  <p style={{ color: '#00ffaa', fontSize: '0.8rem', textAlign: 'center', marginTop: '12px' }}>{item.animal_name}</p>
+                  <p style={{ color: '#00ffaa', fontSize: '0.7rem', textAlign: 'center', marginTop: '8px' }}>{item.animal_name}</p>
                 </motion.div>
               )}
             </AnimatePresence>
